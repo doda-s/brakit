@@ -18,7 +18,6 @@ O **BrakIt** é uma plataforma web para criação, gerenciamento e visualizaçã
     - Nome e Descrição.
     - Visibilidade (_Público_ ou _Privado_).
     - Quantidade máxima de times participantes.
-    - Quantidade máxima de integrantes por time.
 
 ### RF03 — Gestão de Times e Integrantes
 
