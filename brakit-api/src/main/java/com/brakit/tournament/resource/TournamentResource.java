@@ -1,11 +1,13 @@
 package com.brakit.tournament.resource;
 
 import com.brakit.tournament.dto.request.CreateTournamentRequest;
+import com.brakit.tournament.dto.request.UpdateTournamentRequest;
 import com.brakit.tournament.service.TournamentService;
 
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 
@@ -20,4 +22,10 @@ public class TournamentResource {
 		return Response.status(Response.Status.CREATED).entity(response).build();
 	}
 
+	@PUT()
+	@Path("/{id}")
+	public Response updateTournament(@Valid UpdateTournamentRequest request) {
+		var response = tournamentService.updateTournament(request);
+		return Response.status(Response.Status.OK).entity(response).build();
+	}
 }

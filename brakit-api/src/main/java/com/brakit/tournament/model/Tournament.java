@@ -69,4 +69,12 @@ public class Tournament {
 	) {
 		return new Tournament(null, name, description, visibility, teamCountLimit);
 	}
+
+	public Tournament merge(Tournament t) {
+		this.name = t.name != null? t.name : this.name;
+		this.description = t.description != null? t.description : this.description;
+		this.visibility = t.visibility != null? t.visibility : this.visibility;
+		this.teamCountLimit = t.teamCountLimit > 0? t.teamCountLimit : this.teamCountLimit;
+		return this;
+	}
 }
