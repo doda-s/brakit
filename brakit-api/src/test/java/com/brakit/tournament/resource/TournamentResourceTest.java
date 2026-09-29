@@ -1,7 +1,11 @@
 package com.brakit.tournament.resource;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -159,5 +163,102 @@ class TournamentResourceTest {
 			.statusCode(404)
 			.body("status", equalTo(404))
 			.body("message", equalTo("No tournament with id 999999 was found."));
+	}
+
+	@Test
+	void getsTournamentById() {
+		long id = createTournament();
+
+		given()
+		.when()
+			.get("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(200)
+			.body("id", equalTo((int) id))
+			.body("name", equalTo("Copa"))
+			.body("description", equalTo("Torneio de teste"))
+			.body("visibility", equalTo("PUBLIC"))
+			.body("teamCountLimit", equalTo(8));
+	}
+
+	@Test
+	void getReturnsNotFoundForUnknownTournament() {
+		given()
+		.when()
+			.get("/api/tournaments/{id}", 999999)
+		.then()
+			.statusCode(404)
+			.body("status", equalTo(404))
+			.body("message", equalTo("No tournament with id 999999 was found."));
+	}
+
+	@Test
+	void listsTournamentsPaginated() {
+		long first = createTournament();
+		long second = createTournament();
+		long deleted = createTournament();
+
+		given()
+		.when()
+			.delete("/api/tournaments/{id}", deleted)
+		.then()
+			.statusCode(204);
+
+		int total = given()
+		.when()
+			.get("/api/tournaments")
+		.then()
+			.statusCode(200)
+			.body("page", equalTo(0))
+			.body("size", equalTo(20))
+			.body("content.id", not(hasItems((int) deleted)))
+			.extract().jsonPath().getInt("totalElements");
+
+		// Ordered by id, so the last two remaining tournaments fall on the final page of size 1
+		given()
+			.queryParam("page", total - 2)
+			.queryParam("size", 1)
+		.when()
+			.get("/api/tournaments")
+		.then()
+			.statusCode(200)
+			.body("content.id", contains((int) first))
+			.body("totalPages", equalTo(total));
+
+		given()
+			.queryParam("page", total - 1)
+			.queryParam("size", 1)
+		.when()
+			.get("/api/tournaments")
+		.then()
+			.statusCode(200)
+			.body("content.id", contains((int) second));
+	}
+
+	@Test
+	void returnsEmptyPageBeyondLastPage() {
+		createTournament();
+
+		given()
+			.queryParam("page", 100000)
+		.when()
+			.get("/api/tournaments")
+		.then()
+			.statusCode(200)
+			.body("content", empty())
+			.body("page", equalTo(100000));
+	}
+
+	@Test
+	void rejectsInvalidPaginationParams() {
+		given()
+			.queryParam("page", -1)
+			.queryParam("size", 101)
+		.when()
+			.get("/api/tournaments")
+		.then()
+			.statusCode(400)
+			.body("message", containsString("page"))
+			.body("message", containsString("size"));
 	}
 }

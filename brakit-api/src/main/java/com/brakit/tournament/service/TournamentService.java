@@ -1,5 +1,6 @@
 package com.brakit.tournament.service;
 
+import com.brakit.pagination.Page;
 import com.brakit.tournament.dto.request.CreateTournamentRequest;
 import com.brakit.tournament.dto.request.CreateTournamentRequestMapper;
 import com.brakit.tournament.dto.request.UpdateTournamentRequest;
@@ -17,6 +18,17 @@ import jakarta.transaction.Transactional;
 public class TournamentService {
 	
 	@Inject TournamentRepository tournamentRepository;
+
+	public Page<TournamentResponse> listTournaments(int page, int size) {
+		return tournamentRepository.getPage(page, size)
+				.map(TournamentResponseMapper::toResponse);
+	}
+
+	public TournamentResponse getTournament(Long id) {
+		return tournamentRepository.getById(id)
+				.map(TournamentResponseMapper::toResponse)
+				.orElseThrow(() -> new TournamentNotFound(id));
+	}
 
 	@Transactional 
 	public TournamentResponse createTournament(CreateTournamentRequest request) {
