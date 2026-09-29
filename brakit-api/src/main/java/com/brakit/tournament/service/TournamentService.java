@@ -33,4 +33,11 @@ public class TournamentService {
 		var saved = tournamentRepository.save(model);
 		return TournamentResponseMapper.toResponse(saved);
 	}
+
+	@Transactional
+	public void deleteTournament(Long id) {
+		if (!tournamentRepository.deleteById(id)) {
+			throw new TournamentNotFound(id);
+		}
+	}
 }

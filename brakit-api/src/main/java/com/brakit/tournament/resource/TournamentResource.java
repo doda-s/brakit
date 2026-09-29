@@ -7,6 +7,7 @@ import com.brakit.tournament.service.TournamentService;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -29,5 +30,12 @@ public class TournamentResource {
 	public Response updateTournament(@PathParam("id") Long id, @Valid @NotNull UpdateTournamentRequest request) {
 		var response = tournamentService.updateTournament(id, request);
 		return Response.status(Response.Status.OK).entity(response).build();
+	}
+
+	@DELETE()
+	@Path("/{id}")
+	public Response deleteTournament(@PathParam("id") Long id) {
+		tournamentService.deleteTournament(id);
+		return Response.status(Response.Status.NO_CONTENT).build();
 	}
 }

@@ -128,4 +128,36 @@ class TournamentResourceTest {
 			.body("status", equalTo(404))
 			.body("message", equalTo("No tournament with id 999999 was found."));
 	}
+
+	@Test
+	void deletesTournament() {
+		long id = createTournament();
+
+		given()
+		.when()
+			.delete("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(204);
+
+		given()
+			.contentType(ContentType.JSON)
+			.body("""
+				{"name": "x"}
+				""")
+		.when()
+			.put("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(404);
+	}
+
+	@Test
+	void deleteReturnsNotFoundForUnknownTournament() {
+		given()
+		.when()
+			.delete("/api/tournaments/{id}", 999999)
+		.then()
+			.statusCode(404)
+			.body("status", equalTo(404))
+			.body("message", equalTo("No tournament with id 999999 was found."));
+	}
 }
