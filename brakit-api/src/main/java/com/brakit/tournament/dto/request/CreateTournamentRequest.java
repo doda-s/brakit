@@ -10,5 +10,5 @@ public record CreateTournamentRequest(
 	@NotBlank String name,
 	@NotBlank String description,
 	@NotNull  TournamentVisibility visibility,
-	@NotNull @Positive int teamCountLimit
+	@NotNull @Positive Integer teamCountLimit
 ) {}

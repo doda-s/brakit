@@ -2,20 +2,26 @@ package com.brakit.tournament.entity;
 
 import com.brakit.tournament.model.TournamentVisibility;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "tournament")
 public class TournamentEntity {
-	@Id @GeneratedValue private Long id;
-	private String name;
-	private String description;
-	private TournamentVisibility visibility;
-	private int teamCountLimit;
-	
+	@Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
+	@Column(nullable = false) private String name;
+	@Column(nullable = false) private String description;
+	@Column(nullable = false) @Enumerated(EnumType.STRING) private TournamentVisibility visibility;
+	@Column(nullable = false) private int teamCountLimit;
+
+	protected TournamentEntity() {}
+
 	public TournamentEntity(
 		Long id,
 		String name,

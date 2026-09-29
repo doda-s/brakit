@@ -2,9 +2,9 @@ package com.brakit.tournament.dto.response;
 
 import com.brakit.tournament.model.Tournament;
 
-public class CreateTournamentResponseMapper {
-	public static CreateTournamentResponse toResponse(Tournament model) {
-		return new CreateTournamentResponse(
+public class TournamentResponseMapper {
+	public static TournamentResponse toResponse(Tournament model) {
+		return new TournamentResponse(
 			model.getId(),
 			model.getName(),
 			model.getDescription(),

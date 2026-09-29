@@ -1,4 +1,4 @@
-package com.brakit.tournament.service;
+package com.brakit.tournament.repository;
 
 import com.brakit.tournament.entity.TournamentEntity;
 import com.brakit.tournament.model.Tournament;
