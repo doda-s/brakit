@@ -1,3 +1,8 @@
+#DEV
+application-dev.properties
+dev-keys/
+*.pem
+
 #Maven
 target/
 pom.xml.tag
