@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  # Database - PostgreSQL
+  brakit-db:
+    image: postgres:16-alpine
+    container_name: brakit-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=brakit
+      - POSTGRES_USER=brakit
+      - POSTGRES_PASSWORD=brakit
+    volumes:
+      - brakit-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brakit -d brakit"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Backend - Quarkus API
+  brakit-api:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: brakit-api
+    working_dir: /app
+    ports:
+      - "8080:8080"
+    environment:
+      - QUARKUS_HTTP_CORS=true
+      - QUARKUS_HTTP_CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+      - QUARKUS_DATASOURCE_DB_KIND=postgresql
+      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://brakit-db:5432/brakit
+      - QUARKUS_DATASOURCE_USERNAME=brakit
+      - QUARKUS_DATASOURCE_PASSWORD=brakit
+    volumes:
+      - ./brakit-api:/app
+      - brakit-m2:/root/.m2
+    depends_on:
+      brakit-db:
+        condition: service_healthy
+    command: mvn quarkus:dev -Dquarkus.http.host=0.0.0.0
+
+  # Frontend - React App
+  brakit-frontend:
+    build:
+      context: ./brakit-frontend
+      dockerfile: Dockerfile.dev
+    container_name: brakit-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080/api
+    volumes:
+      - ./brakit-frontend/src:/app/src
+      - ./brakit-frontend/public:/app/public
+    depends_on:
+      brakit-api:
+        condition: service_started
+
+# Networks
+networks:
+  default:
+    name: brakit-network
+
+volumes:
+  brakit-db-data:
+  brakit-m2:
