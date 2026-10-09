@@ -46,6 +46,21 @@ public class GlobalExceptionMapper {
 		);
 	}
 
+	// Unique constraint hit by a concurrent insert that slipped past the service's existence check
+	@ServerExceptionMapper
+	public RestResponse<ErrorResponse> mapDatabaseConstraintViolation(org.hibernate.exception.ConstraintViolationException e) {
+		if (e.getKind() != org.hibernate.exception.ConstraintViolationException.ConstraintKind.UNIQUE) {
+			return RestResponse.status(
+				RestResponse.Status.INTERNAL_SERVER_ERROR,
+				new ErrorResponse(500, "Internal server error.")
+			);
+		}
+		return RestResponse.status(
+			RestResponse.Status.CONFLICT,
+			new ErrorResponse(409, "Resource conflicts with an existing one.")
+		);
+	}
+
 	@ServerExceptionMapper
 	public RestResponse<ErrorResponse> mapConstraintViolation(ConstraintViolationException e) {
 		var message = e.getConstraintViolations().stream()

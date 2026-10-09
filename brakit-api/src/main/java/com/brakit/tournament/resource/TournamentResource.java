@@ -4,6 +4,7 @@ import com.brakit.tournament.dto.request.CreateTournamentRequest;
 import com.brakit.tournament.dto.request.UpdateTournamentRequest;
 import com.brakit.tournament.service.TournamentService;
 
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -41,12 +42,14 @@ public class TournamentResource {
 	}
 
 	@POST()
+	@Authenticated
 	public Response createTournament(@Valid @NotNull CreateTournamentRequest request) {
 		var response = tournamentService.createTournament(request);
 		return Response.status(Response.Status.CREATED).entity(response).build();
 	}
 
 	@PUT()
+	@Authenticated
 	@Path("/{id}")
 	public Response updateTournament(@PathParam("id") Long id, @Valid @NotNull UpdateTournamentRequest request) {
 		var response = tournamentService.updateTournament(id, request);
@@ -54,6 +57,7 @@ public class TournamentResource {
 	}
 
 	@DELETE()
+	@Authenticated
 	@Path("/{id}")
 	public Response deleteTournament(@PathParam("id") Long id) {
 		tournamentService.deleteTournament(id);

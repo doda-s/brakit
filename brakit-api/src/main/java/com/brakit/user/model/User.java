@@ -1,5 +1,7 @@
 package com.brakit.user.model;
 
+import java.util.Locale;
+
 public class User {
 	private Long id;
 	private String name;
@@ -55,6 +57,6 @@ public class User {
 	}
 
 	public static String normalizeEmail(String email) {
-		return email.trim().toLowerCase();
+		return email.trim().toLowerCase(Locale.ROOT);
 	}
 }
