@@ -1,5 +1,7 @@
 package com.brakit.auth.service;
 
+import java.util.UUID;
+
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import com.brakit.auth.dto.request.LoginRequest;
@@ -23,6 +25,9 @@ import jakarta.transaction.Transactional;
 @ApplicationScoped
 public class AuthService {
 
+	// Same cost factor as real hashes; the random password guarantees it never matches
+	private static final String DUMMY_PASSWORD_HASH = BcryptUtil.bcryptHash(UUID.randomUUID().toString());
+
 	@Inject UserRepository userRepository;
 
 	@ConfigProperty(name = "smallrye.jwt.new-token.lifespan") long tokenLifespan;
@@ -39,10 +44,10 @@ public class AuthService {
 	}
 
 	public TokenResponse login(LoginRequest request) {
-		var user = userRepository.getByEmail(User.normalizeEmail(request.email()))
-				.filter(u -> BcryptUtil.matches(request.password(), u.getPasswordHash()))
-				.orElseThrow(InvalidCredentials::new);
-		// Issuer and lifespan come from the smallrye.jwt.new-token.* config
+		var found = userRepository.getByEmail(User.normalizeEmail(request.email()));
+		var hash = found.map(User::getPasswordHash).orElse(DUMMY_PASSWORD_HASH);
+		var passwordMatches = BcryptUtil.matches(request.password(), hash);
+		var user = found.filter(u -> passwordMatches).orElseThrow(InvalidCredentials::new);
 		var token = Jwt.subject(user.getId().toString())
 				.upn(user.getEmail())
 				.groups("user")
