@@ -8,6 +8,7 @@ import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import com.brakit.auth.service.exception.EmailAlreadyRegistered;
 import com.brakit.auth.service.exception.InvalidCredentials;
 import com.brakit.auth.service.exception.UserNotFound;
+import com.brakit.tournament.service.exception.NotTournamentOwner;
 import com.brakit.tournament.service.exception.TournamentNotFound;
 
 import jakarta.validation.ConstraintViolation;
@@ -19,6 +20,14 @@ public class GlobalExceptionMapper {
 		return RestResponse.status(
 			RestResponse.Status.NOT_FOUND,
 			new ErrorResponse(404, e.getMessage())
+		);
+	}
+
+	@ServerExceptionMapper
+	public RestResponse<ErrorResponse> mapNotTournamentOwner(NotTournamentOwner e) {
+		return RestResponse.status(
+			RestResponse.Status.FORBIDDEN,
+			new ErrorResponse(403, e.getMessage())
 		);
 	}
 

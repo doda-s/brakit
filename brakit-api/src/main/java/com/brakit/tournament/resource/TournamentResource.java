@@ -1,5 +1,6 @@
 package com.brakit.tournament.resource;
 
+import com.brakit.auth.CurrentUser;
 import com.brakit.tournament.dto.request.CreateTournamentRequest;
 import com.brakit.tournament.dto.request.UpdateTournamentRequest;
 import com.brakit.tournament.service.TournamentService;
@@ -24,27 +25,28 @@ import jakarta.ws.rs.core.Response;
 public class TournamentResource {
 	
 	@Inject TournamentService tournamentService;
+	@Inject CurrentUser currentUser;
 
 	@GET()
 	public Response listTournaments(
 		@QueryParam("page") @DefaultValue("0") @Min(0) int page,
 		@QueryParam("size") @DefaultValue("20") @Min(1) @Max(100) int size
 	) {
-		var response = tournamentService.listTournaments(page, size);
+		var response = tournamentService.listTournaments(currentUser.id(), page, size);
 		return Response.status(Response.Status.OK).entity(response).build();
 	}
 
 	@GET()
 	@Path("/{id}")
 	public Response getTournament(@PathParam("id") Long id) {
-		var response = tournamentService.getTournament(id);
+		var response = tournamentService.getTournament(id, currentUser.id());
 		return Response.status(Response.Status.OK).entity(response).build();
 	}
 
 	@POST()
 	@Authenticated
 	public Response createTournament(@Valid @NotNull CreateTournamentRequest request) {
-		var response = tournamentService.createTournament(request);
+		var response = tournamentService.createTournament(request, currentUser.requireId());
 		return Response.status(Response.Status.CREATED).entity(response).build();
 	}
 
@@ -52,7 +54,7 @@ public class TournamentResource {
 	@Authenticated
 	@Path("/{id}")
 	public Response updateTournament(@PathParam("id") Long id, @Valid @NotNull UpdateTournamentRequest request) {
-		var response = tournamentService.updateTournament(id, request);
+		var response = tournamentService.updateTournament(id, request, currentUser.requireId());
 		return Response.status(Response.Status.OK).entity(response).build();
 	}
 
@@ -60,7 +62,7 @@ public class TournamentResource {
 	@Authenticated
 	@Path("/{id}")
 	public Response deleteTournament(@PathParam("id") Long id) {
-		tournamentService.deleteTournament(id);
+		tournamentService.deleteTournament(id, currentUser.requireId());
 		return Response.status(Response.Status.NO_CONTENT).build();
 	}
 }

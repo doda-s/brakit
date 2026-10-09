@@ -1,24 +1,29 @@
 package com.brakit.tournament.model;
 
+import java.util.Optional;
+
 public class Tournament {
 	private Long id;
 	private String name;
 	private String description;
 	private TournamentVisibility visibility;
 	private int teamCountLimit;
+	private Long ownerId;
 
 	public Tournament(
 		Long id,
 		String name,
 		String description,
 		TournamentVisibility visibility,
-		int teamCountLimit
+		int teamCountLimit,
+		Long ownerId
 	) {
 		this.id = id;
 		this.name = name;
 		this.description = description;
 		this.visibility = visibility;
 		this.teamCountLimit = teamCountLimit;
+		this.ownerId = ownerId;
 	}
 
 	public Long getId() {
@@ -61,13 +66,30 @@ public class Tournament {
 		this.teamCountLimit = teamCountLimit;
 	}
 
+	public Long getOwnerId() {
+		return ownerId;
+	}
+
+	public void setOwnerId(Long ownerId) {
+		this.ownerId = ownerId;
+	}
+
 	public static Tournament create(
 		String name,
 		String description,
 		TournamentVisibility visibility,
-		int teamCountLimit
+		int teamCountLimit,
+		Long ownerId
 	) {
-		return new Tournament(null, name, description, visibility, teamCountLimit);
+		return new Tournament(null, name, description, visibility, teamCountLimit, ownerId);
+	}
+
+	public boolean isOwnedBy(Long userId) {
+		return ownerId.equals(userId);
+	}
+
+	public boolean isVisibleTo(Optional<Long> viewerId) {
+		return visibility == TournamentVisibility.PUBLIC || viewerId.filter(this::isOwnedBy).isPresent();
 	}
 
 	public Tournament merge(Tournament t) {
