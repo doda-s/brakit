@@ -1,6 +1,10 @@
 package com.brakit.tournament.resource;
 
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirementsSet;
+
 import com.brakit.auth.CurrentUser;
+import com.brakit.auth.OpenApiSecurity;
 import com.brakit.tournament.dto.request.CreateTournamentRequest;
 import com.brakit.tournament.dto.request.UpdateTournamentRequest;
 import com.brakit.tournament.service.TournamentService;
@@ -28,6 +32,9 @@ public class TournamentResource {
 	@Inject CurrentUser currentUser;
 
 	@GET()
+	// Auth is optional here: Swagger UI only sends the token to operations that declare a security requirement
+	@SecurityRequirementsSet(@SecurityRequirement(name = OpenApiSecurity.SCHEME))
+	@SecurityRequirementsSet()
 	public Response listTournaments(
 		@QueryParam("page") @DefaultValue("0") @Min(0) int page,
 		@QueryParam("size") @DefaultValue("20") @Min(1) @Max(100) int size
@@ -37,6 +44,9 @@ public class TournamentResource {
 	}
 
 	@GET()
+	// Auth is optional here: Swagger UI only sends the token to operations that declare a security requirement
+	@SecurityRequirementsSet(@SecurityRequirement(name = OpenApiSecurity.SCHEME))
+	@SecurityRequirementsSet()
 	@Path("/{id}")
 	public Response getTournament(@PathParam("id") Long id) {
 		var response = tournamentService.getTournament(id, currentUser.id());

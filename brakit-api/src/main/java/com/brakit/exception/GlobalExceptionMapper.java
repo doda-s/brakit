@@ -8,7 +8,11 @@ import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 import com.brakit.auth.service.exception.EmailAlreadyRegistered;
 import com.brakit.auth.service.exception.InvalidCredentials;
 import com.brakit.auth.service.exception.UserNotFound;
+import com.brakit.team.service.exception.TeamNameAlreadyTaken;
+import com.brakit.team.service.exception.TeamNotFound;
+import com.brakit.team.service.exception.TournamentFull;
 import com.brakit.tournament.service.exception.NotTournamentOwner;
+import com.brakit.tournament.service.exception.TeamCountLimitBelowTeamCount;
 import com.brakit.tournament.service.exception.TournamentNotFound;
 
 import jakarta.validation.ConstraintViolation;
@@ -28,6 +32,38 @@ public class GlobalExceptionMapper {
 		return RestResponse.status(
 			RestResponse.Status.FORBIDDEN,
 			new ErrorResponse(403, e.getMessage())
+		);
+	}
+
+	@ServerExceptionMapper
+	public RestResponse<ErrorResponse> mapTeamCountLimitBelowTeamCount(TeamCountLimitBelowTeamCount e) {
+		return RestResponse.status(
+			RestResponse.Status.CONFLICT,
+			new ErrorResponse(409, e.getMessage())
+		);
+	}
+
+	@ServerExceptionMapper
+	public RestResponse<ErrorResponse> mapTeamNotFound(TeamNotFound e) {
+		return RestResponse.status(
+			RestResponse.Status.NOT_FOUND,
+			new ErrorResponse(404, e.getMessage())
+		);
+	}
+
+	@ServerExceptionMapper
+	public RestResponse<ErrorResponse> mapTeamNameAlreadyTaken(TeamNameAlreadyTaken e) {
+		return RestResponse.status(
+			RestResponse.Status.CONFLICT,
+			new ErrorResponse(409, e.getMessage())
+		);
+	}
+
+	@ServerExceptionMapper
+	public RestResponse<ErrorResponse> mapTournamentFull(TournamentFull e) {
+		return RestResponse.status(
+			RestResponse.Status.CONFLICT,
+			new ErrorResponse(409, e.getMessage())
 		);
 	}
 
