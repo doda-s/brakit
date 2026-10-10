@@ -2,14 +2,21 @@ package com.brakit.team.resource;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.oneOf;
+import static org.hamcrest.Matchers.startsWith;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
@@ -76,6 +83,115 @@ class TeamResourceTest {
 			.statusCode(201)
 			.body("name", equalTo("Os Brabos"))
 			.body("tournamentId", equalTo((int) tournamentId));
+	}
+
+	@Test
+	void createsTeamWithInitialMembers() {
+		long tournamentId = createTournament();
+
+		long teamId = authenticated()
+			.contentType(ContentType.JSON)
+			.body("""
+				{"name": "Alfa", "members": [{"name": "Fulano", "role": "Capitão"}, {"name": "Ciclano"}]}
+				""")
+		.when()
+			.post("/api/tournaments/{id}/teams", tournamentId)
+		.then()
+			.statusCode(201)
+			.body("members.name", contains("Fulano", "Ciclano"))
+			.body("members[0].role", equalTo("Capitão"))
+			.body("members[1].role", nullValue())
+			.body("members.id", everyItem(notNullValue()))
+			.extract().jsonPath().getLong("id");
+
+		given()
+		.when()
+			.get("/api/tournaments/{id}/teams/{teamId}/members", tournamentId, teamId)
+		.then()
+			.statusCode(200)
+			.body("name", contains("Fulano", "Ciclano"))
+			.body("teamId", everyItem(equalTo((int) teamId)));
+
+		// Only creation echoes the members; reading a team doesn't include them
+		given()
+		.when()
+			.get("/api/tournaments/{id}/teams/{teamId}", tournamentId, teamId)
+		.then()
+			.statusCode(200)
+			.body("$", not(hasKey("members")));
+	}
+
+	@Test
+	void createsTeamWithEmptyMembersWhenNoneAreSent() {
+		long tournamentId = createTournament();
+
+		authenticated()
+			.contentType(ContentType.JSON)
+			.body("{\"name\": \"Alfa\"}")
+		.when()
+			.post("/api/tournaments/{id}/teams", tournamentId)
+		.then()
+			.statusCode(201)
+			.body("members", empty());
+	}
+
+	@Test
+	void invalidMemberRejectsWholeTeamAndReportsItsIndex() {
+		long tournamentId = createTournament();
+
+		authenticated()
+			.contentType(ContentType.JSON)
+			.body("""
+				{"name": "Alfa", "members": [{"name": "Fulano"}, {"name": "Ciclano"}, {"name": " ", "role": " "}, null]}
+				""")
+		.when()
+			.post("/api/tournaments/{id}/teams", tournamentId)
+		.then()
+			.statusCode(400)
+			// Only field paths are asserted: message texts follow the JVM locale
+			.body("message", allOf(
+				startsWith("members[2].name: "),
+				containsString("; members[2].role: "),
+				containsString("; members[3]: ")));
+
+		// Nothing was created, so the name is still free
+		createTeam(tournamentId, "Alfa");
+	}
+
+	@Test
+	void rejectsMoreThanTwentyInitialMembers() {
+		long tournamentId = createTournament();
+		var members = String.join(",", Collections.nCopies(21, "{\"name\": \"Fulano\"}"));
+
+		authenticated()
+			.contentType(ContentType.JSON)
+			.body("{\"name\": \"Alfa\", \"members\": [%s]}".formatted(members))
+		.when()
+			.post("/api/tournaments/{id}/teams", tournamentId)
+		.then()
+			.statusCode(400)
+			.body("message", allOf(startsWith("members: "), containsString("20")));
+	}
+
+	@Test
+	void updateIgnoresMembers() {
+		long tournamentId = createTournament();
+		long teamId = createTeam(tournamentId, "Alfa");
+
+		authenticated()
+			.contentType(ContentType.JSON)
+			.body("{\"name\": \"Beta\", \"members\": [{\"name\": \"Fulano\"}]}")
+		.when()
+			.put("/api/tournaments/{id}/teams/{teamId}", tournamentId, teamId)
+		.then()
+			.statusCode(200)
+			.body("name", equalTo("Beta"));
+
+		given()
+		.when()
+			.get("/api/tournaments/{id}/teams/{teamId}/members", tournamentId, teamId)
+		.then()
+			.body("$", empty());
 	}
 
 	@Test

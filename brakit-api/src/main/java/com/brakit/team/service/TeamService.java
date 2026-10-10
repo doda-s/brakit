@@ -3,11 +3,15 @@ package com.brakit.team.service;
 import java.util.List;
 import java.util.Optional;
 
+import com.brakit.member.dto.request.MemberRequestMapper;
+import com.brakit.member.dto.response.MemberResponseMapper;
+import com.brakit.member.repository.TeamMemberRepository;
 import com.brakit.team.dto.request.CreateTeamRequest;
 import com.brakit.team.dto.request.CreateTeamRequestMapper;
 import com.brakit.team.dto.request.UpdateTeamRequest;
 import com.brakit.team.dto.response.TeamResponse;
 import com.brakit.team.dto.response.TeamResponseMapper;
+import com.brakit.team.dto.response.TeamWithMembersResponse;
 import com.brakit.team.model.Team;
 import com.brakit.team.repository.TeamRepository;
 import com.brakit.team.service.exception.TeamNameAlreadyTaken;
@@ -23,6 +27,7 @@ import jakarta.transaction.Transactional;
 public class TeamService {
 
 	@Inject TeamRepository teamRepository;
+	@Inject TeamMemberRepository memberRepository;
 	@Inject TournamentService tournamentService;
 
 	public List<TeamResponse> listTeams(Long tournamentId, Optional<Long> viewerId) {
@@ -38,7 +43,7 @@ public class TeamService {
 	}
 
 	@Transactional
-	public TeamResponse createTeam(Long tournamentId, CreateTeamRequest request, Long userId) {
+	public TeamWithMembersResponse createTeam(Long tournamentId, CreateTeamRequest request, Long userId) {
 		// Locking the tournament serializes concurrent creations, so the count check below can't be raced past
 		var tournament = tournamentService.getOwnedForUpdate(tournamentId, userId);
 		if (teamRepository.countInTournament(tournamentId) >= tournament.getTeamCountLimit()) {
@@ -46,7 +51,12 @@ public class TeamService {
 		}
 		var team = CreateTeamRequestMapper.toModel(request, tournamentId);
 		requireUniqueName(team, tournamentId);
-		return TeamResponseMapper.toResponse(teamRepository.save(team));
+		var savedTeam = teamRepository.save(team);
+		var members = request.members().stream()
+				.map(m -> memberRepository.save(MemberRequestMapper.toModel(m, savedTeam.getId())))
+				.map(MemberResponseMapper::toResponse)
+				.toList();
+		return TeamResponseMapper.toResponse(savedTeam, members);
 	}
 
 	@Transactional
@@ -66,7 +76,7 @@ public class TeamService {
 	}
 
 	// A team id from another tournament is reported as not found
-	private Team getInTournament(Long tournamentId, Long teamId) {
+	public Team getInTournament(Long tournamentId, Long teamId) {
 		return teamRepository.getByIdInTournament(teamId, tournamentId)
 				.orElseThrow(() -> new TeamNotFound(teamId));
 	}
