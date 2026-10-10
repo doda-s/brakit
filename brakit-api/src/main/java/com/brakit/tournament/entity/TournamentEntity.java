@@ -19,6 +19,7 @@ public class TournamentEntity {
 	@Column(nullable = false) private String description;
 	@Column(nullable = false) @Enumerated(EnumType.STRING) private TournamentVisibility visibility;
 	@Column(nullable = false) private int teamCountLimit;
+	@Column(nullable = false) private Long ownerId;
 
 	protected TournamentEntity() {}
 
@@ -27,13 +28,15 @@ public class TournamentEntity {
 		String name,
 		String description,
 		TournamentVisibility visibility,
-		int teamCountLimit
+		int teamCountLimit,
+		Long ownerId
 	) {
 		this.id = id;
 		this.name = name;
 		this.description = description;
 		this.visibility = visibility;
 		this.teamCountLimit = teamCountLimit;
+		this.ownerId = ownerId;
 	}
 
 	public Long getId() {
@@ -74,5 +77,13 @@ public class TournamentEntity {
 
 	public void setTeamCountLimit(int teamCountLimit) {
 		this.teamCountLimit = teamCountLimit;
+	}
+
+	public Long getOwnerId() {
+		return ownerId;
+	}
+
+	public void setOwnerId(Long ownerId) {
+		this.ownerId = ownerId;
 	}
 }

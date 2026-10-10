@@ -9,7 +9,8 @@ public class TournamentResponseMapper {
 			model.getName(),
 			model.getDescription(),
 			model.getVisibility(),
-			model.getTeamCountLimit()
+			model.getTeamCountLimit(),
+			model.getOwnerId()
 		);
 	}
 }

@@ -7,5 +7,6 @@ public record TournamentResponse(
 	String name,
 	String description,
 	TournamentVisibility visibility,
-	int teamCountLimit
+	int teamCountLimit,
+	Long ownerId
 ) {}

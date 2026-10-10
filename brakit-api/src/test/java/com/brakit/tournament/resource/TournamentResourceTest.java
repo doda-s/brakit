@@ -4,14 +4,15 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
-import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
+
+import com.brakit.support.TestUsers;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -24,22 +25,27 @@ class TournamentResourceTest {
 		{"name": "Copa", "description": "Torneio de teste", "visibility": "PUBLIC", "teamCountLimit": 8}
 		""";
 
-	private static String token;
+	private static String ownerToken;
 
-	// Registers one user per test class and reuses its token for every write request
+	// One owner per test class; its token is reused for every write request
 	private static RequestSpecification authenticated() {
-		if (token == null) {
-			var email = "tournament-" + UUID.randomUUID() + "@brakit.com";
-			var credentials = """
-				{"name": "Organizador", "email": "%s", "password": "s3cret-password"}
-				""".formatted(email);
-			given().contentType(ContentType.JSON).body(credentials)
-				.post("/api/auth/register").then().statusCode(201);
-			token = given().contentType(ContentType.JSON).body(credentials)
-				.post("/api/auth/login").then().statusCode(200)
-				.extract().jsonPath().getString("accessToken");
+		if (ownerToken == null) {
+			ownerToken = TestUsers.newToken();
 		}
-		return given().auth().oauth2(token);
+		return given().auth().oauth2(ownerToken);
+	}
+
+	private long createPrivateTournament() {
+		return authenticated()
+			.contentType(ContentType.JSON)
+			.body("""
+				{"name": "Copa Privada", "description": "d", "visibility": "PRIVATE", "teamCountLimit": 8}
+				""")
+		.when()
+			.post("/api/tournaments")
+		.then()
+			.statusCode(201)
+			.extract().jsonPath().getLong("id");
 	}
 
 	private long createTournament() {
@@ -290,6 +296,154 @@ class TournamentResourceTest {
 		given()
 			.when().get("/api/tournaments/{id}", id)
 			.then().statusCode(200);
+	}
+
+	@Test
+	void createSetsCurrentUserAsOwner() {
+		long id = createTournament();
+		long ownerId = authenticated().get("/api/auth/me").then().extract().jsonPath().getLong("id");
+
+		given()
+		.when()
+			.get("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(200)
+			.body("ownerId", equalTo((int) ownerId));
+	}
+
+	@Test
+	void ignoresOwnerIdInRequestBody() {
+		long id = authenticated()
+			.contentType(ContentType.JSON)
+			.body("""
+				{"name": "Copa", "description": "d", "visibility": "PUBLIC", "teamCountLimit": 8, "ownerId": 999999}
+				""")
+		.when()
+			.post("/api/tournaments")
+		.then()
+			.statusCode(201)
+			.body("ownerId", not(equalTo(999999)))
+			.extract().jsonPath().getLong("id");
+
+		authenticated()
+			.contentType(ContentType.JSON)
+			.body("{\"ownerId\": 999999}")
+		.when()
+			.put("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(200)
+			.body("ownerId", not(equalTo(999999)));
+	}
+
+	@Test
+	void onlyOwnerCanModifyPublicTournament() {
+		long id = createTournament();
+		var otherToken = TestUsers.newToken();
+
+		given()
+			.auth().oauth2(otherToken)
+			.contentType(ContentType.JSON)
+			.body("{\"name\": \"Invadido\"}")
+		.when()
+			.put("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(403)
+			.body("status", equalTo(403));
+
+		given()
+			.auth().oauth2(otherToken)
+		.when()
+			.delete("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(403);
+
+		given()
+		.when()
+			.get("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(200)
+			.body("name", equalTo("Copa"));
+	}
+
+	@Test
+	void privateTournamentIsHiddenFromEveryoneButOwner() {
+		long id = createPrivateTournament();
+		var otherToken = TestUsers.newToken();
+
+		authenticated()
+		.when()
+			.get("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(200);
+
+		given()
+		.when()
+			.get("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(404)
+			.body("message", equalTo("No tournament with id %d was found.".formatted(id)));
+
+		given()
+			.auth().oauth2(otherToken)
+		.when()
+			.get("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(404);
+
+		// Writes by non-owners also get 404, not 403, so the tournament's existence isn't revealed
+		given()
+			.auth().oauth2(otherToken)
+			.contentType(ContentType.JSON)
+			.body("{\"name\": \"x\"}")
+		.when()
+			.put("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(404);
+
+		given()
+			.auth().oauth2(otherToken)
+		.when()
+			.delete("/api/tournaments/{id}", id)
+		.then()
+			.statusCode(404);
+	}
+
+	@Test
+	void listShowsPrivateTournamentsOnlyToOwner() {
+		long publicId = createTournament();
+		long privateId = createPrivateTournament();
+		var otherToken = TestUsers.newToken();
+
+		given()
+			.queryParam("size", 100)
+		.when()
+			.get("/api/tournaments")
+		.then()
+			.statusCode(200)
+			.body("content.id", hasItems((int) publicId))
+			.body("content.id", not(hasItems((int) privateId)))
+			.body("content.visibility", everyItem(equalTo("PUBLIC")));
+
+		given()
+			.auth().oauth2(otherToken)
+			.queryParam("size", 100)
+		.when()
+			.get("/api/tournaments")
+		.then()
+			.statusCode(200)
+			.body("content.id", not(hasItems((int) privateId)));
+
+		// The list is ordered by id, so the newest tournaments sit on the last page
+		int total = authenticated()
+			.get("/api/tournaments").then().extract().jsonPath().getInt("totalElements");
+		authenticated()
+			.queryParam("page", total - 1)
+			.queryParam("size", 1)
+		.when()
+			.get("/api/tournaments")
+		.then()
+			.statusCode(200)
+			.body("content.id", contains((int) privateId));
 	}
 
 	@Test
