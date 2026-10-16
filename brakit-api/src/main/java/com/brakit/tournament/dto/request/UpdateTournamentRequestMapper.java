@@ -9,6 +9,7 @@ public class UpdateTournamentRequestMapper {
 			request.name().orElse(null),
 			request.description().orElse(null),
 			request.visibility().orElse(null),
-			request.teamCountLimit().orElse(0));
+			request.teamCountLimit().orElse(0),
+			null);
 	}
 }

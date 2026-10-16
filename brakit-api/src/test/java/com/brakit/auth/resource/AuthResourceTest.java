@@ -1,13 +1,20 @@
 package com.brakit.auth.resource;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.IntStream;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.jupiter.api.Test;
 
@@ -84,6 +91,30 @@ class AuthResourceTest {
 		.then()
 			.statusCode(409)
 			.body("status", equalTo(409));
+	}
+
+	@Test
+	void concurrentDuplicateRegistrationsYieldConflictNotServerError() {
+		var email = uniqueEmail();
+		int attempts = 8;
+
+		var futures = IntStream.range(0, attempts)
+			.mapToObj(i -> CompletableFuture.supplyAsync(() -> given()
+				.contentType(ContentType.JSON)
+				.body("""
+					{"name": "Fulano", "email": "%s", "password": "%s"}
+					""".formatted(email, PASSWORD))
+			.when()
+				.post("/api/auth/register")
+			.then()
+				.extract().statusCode()))
+			.toList();
+		List<Integer> statuses = futures.stream().map(CompletableFuture::join).toList();
+
+		var expected = new Integer[attempts];
+		expected[0] = 201;
+		Arrays.fill(expected, 1, attempts, 409);
+		assertThat(statuses, containsInAnyOrder(expected));
 	}
 
 	@Test

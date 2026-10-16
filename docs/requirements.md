@@ -23,8 +23,12 @@ O **BrakIt** é uma plataforma web para criação, gerenciamento e visualizaçã
 
 - **RF03.1:** O(s) dono(s) do torneio deve(m) conseguir cadastrar times no torneio.
 - **RF03.2:** O(s) dono(s) do torneio deve(m) conseguir excluir times do torneio.
-- **RF03.3:** O(s) dono(s) do torneio deve(m) conseguir cadastrar integrantes nos times, informando **Nome** e **Função/Cargo** no time.
+- **RF03.3:** O(s) dono(s) do torneio deve(m) conseguir cadastrar integrantes nos times, informando **Nome** e, opcionalmente, **Função/Cargo** no time. A função é um texto livre, sem valores pré-definidos, e nomes de integrantes podem se repetir.
 - **RF03.4:** O(s) dono(s) do torneio deve(m) conseguir remover integrantes de um time.
+- **RF03.5:** O(s) dono(s) do torneio deve(m) conseguir editar o nome de um time.
+- **RF03.6:** O(s) dono(s) do torneio deve(m) conseguir editar o **Nome** e a **Função/Cargo** de um integrante.
+- **RF03.7:** O nome de um time deve ser único dentro do torneio.
+- **RF03.8:** Ao cadastrar um time, o(s) dono(s) do torneio pode(m) informar opcionalmente seus integrantes iniciais (até 20 por requisição); o time e os integrantes são criados juntos ou nenhum deles é criado.
 
 ### RF04 — Chaveamento e Classificação
 
@@ -50,8 +54,8 @@ O **BrakIt** é uma plataforma web para criação, gerenciamento e visualizaçã
 ## 3. Regras de Negócio (RN)
 
 - **RN01 — Limite de Torneios Ativos:** Cada usuário possui uma cota limite de torneios simultaneamente ativos no sistema.
-- **RN02 — Capacidade do Torneio:** O sistema não pode permitir o cadastro de mais times do que a `quantidade máxima de times` configurada no torneio.
-- **RN03 — Capacidade do Time:** O sistema não pode permitir o cadastro de mais integrantes em um time do que a `quantidade máxima de pessoas por time`, caso definida nas configurações do torneio.
+- **RN02 — Capacidade do Torneio:** O sistema não pode permitir o cadastro de mais times do que a `quantidade máxima de times` configurada no torneio. Não há limite de integrantes por time.
+- **RN03 — Visibilidade do Torneio:** Torneios _Privados_ são visíveis apenas para o dono; torneios _Públicos_ são visíveis para qualquer pessoa, autenticada ou não.
 - **RN04 — Trava de Alteração da Chave:** Após a geração inicial e o início das partidas do chaveamento, edições estruturais nos times não devem corromper os confrontos em andamento.
 - **RN05 — Soberania da Arbitragem:** Ações manuais do árbitro (vitória forçada ou desqualificação) se sobrepõem à contagem automática de pontos do sistema.
 
