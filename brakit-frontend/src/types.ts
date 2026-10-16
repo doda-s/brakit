@@ -1,19 +1,20 @@
 export type TournamentVisibility = 'PUBLIC' | 'PRIVATE'
 
-// Tipos de Usuário
+// Usuário
 export interface User {
   id: number
   email: string
   name: string
 }
 
-// Tipos de Torneio
+// Torneio
 export interface Tournament {
   id: number
   name: string
   description: string
   visibility: TournamentVisibility
   teamCountLimit: number
+  ownerId: number
 }
 
 export interface PageResponse<T> {
@@ -24,48 +25,69 @@ export interface PageResponse<T> {
   totalPages: number
 }
 
-// Tipos de Time
+// Time (GET/PUT não retornam membros)
 export interface Team {
-  id: string
-  tournamentId: string
+  id: number
+  tournamentId: number
   name: string
+}
+
+export interface TeamWithMembers extends Team {
   members: TeamMember[]
-  createdAt: string
 }
 
+// Integrante
 export interface TeamMember {
-  id: string
-  teamId: string
+  id: number
+  teamId: number
   name: string
-  position: string
-  joinedAt: string
+  role: string | null
 }
 
-// Tipos de Partida/Round
+// Partida do chaveamento (mata-mata simples)
+export type MatchStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'FINISHED'
+export type MatchResultType = 'SCORE' | 'MANUAL' | 'DISQUALIFICATION' | 'BYE'
+
 export interface Match {
-  id: string
-  roundNumber: number
-  team1Id: string
-  team2Id: string
+  id: number
+  tournamentId: number
+  round: number // 1 = primeira rodada; a maior é a final
+  position: number // posição dentro da rodada (0-based)
+  team1Id: number | null
+  team2Id: number | null
+  team1Name: string | null
+  team2Name: string | null
   team1Score: number
   team2Score: number
-  winnerId?: string
-  status: 'pending' | 'in_progress' | 'finished'
-  startedAt?: string
-  finishedAt?: string
+  status: MatchStatus
+  winnerId: number | null
+  resultType: MatchResultType | null
 }
 
-// Tipos de Ranking
-export interface Ranking {
-  teamId: string
+// Ranking
+export type RankingStatus = 'ACTIVE' | 'ELIMINATED' | 'DISQUALIFIED' | 'CHAMPION'
+
+export interface RankingRow {
+  position: number
+  teamId: number
   teamName: string
+  played: number
   wins: number
   losses: number
+  pointsFor: number
+  pointsAgainst: number
+  scoreDiff: number
   points: number
-  position: number
+  status: RankingStatus
 }
 
-// Tipos de Requisições
+// Erro padrão da API
+export interface ErrorResponse {
+  status: number
+  message: string
+}
+
+// Requisições
 export interface LoginRequest {
   email: string
   password: string
@@ -76,8 +98,6 @@ export interface RegisterRequest {
   email: string
   password: string
 }
-
-export type SignupRequest = RegisterRequest
 
 export interface TokenResponse {
   accessToken: string
@@ -99,20 +119,16 @@ export interface UpdateTournamentRequest {
   teamCountLimit?: number
 }
 
+export interface MemberRequest {
+  name: string
+  role?: string
+}
+
 export interface CreateTeamRequest {
   name: string
+  members?: MemberRequest[]
 }
 
-export interface AddTeamMemberRequest {
+export interface UpdateTeamRequest {
   name: string
-  position: string
-}
-
-export interface UpdateMatchScoreRequest {
-  team1Score: number
-  team2Score: number
-}
-
-export interface SetMatchWinnerRequest {
-  winnerId: string
 }

@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft } from 'lucide-react'
 import { tournamentService } from '@/lib/services'
+import { getErrorMessage } from '@/lib/errors'
 
 export const CreateTournamentPage: React.FC = () => {
   const [name, setName] = React.useState('')
@@ -32,8 +33,8 @@ export const CreateTournamentPage: React.FC = () => {
         teamCountLimit: parseInt(maxTeams),
       })
       navigate(`/tournaments/${data.id}`)
-    } catch {
-      setError('Não foi possível criar o torneio.')
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível criar o torneio.'))
     } finally {
       setIsLoading(false)
     }
@@ -83,13 +84,14 @@ export const CreateTournamentPage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
+                <Label htmlFor="description">Descrição *</Label>
                 <Textarea
                   id="description"
                   placeholder="Descreva o torneio..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
+                  required
                 />
               </div>
 
@@ -99,7 +101,7 @@ export const CreateTournamentPage: React.FC = () => {
                   <Input
                     id="maxTeams"
                     type="number"
-                    min="2"
+                    min="1"
                     value={maxTeams}
                     onChange={(e) => setMaxTeams(e.target.value)}
                     required

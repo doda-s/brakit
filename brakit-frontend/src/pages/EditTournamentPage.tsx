@@ -7,11 +7,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { tournamentService } from '@/lib/services'
-import { Tournament, TournamentVisibility } from '@/types'
+import { getErrorMessage } from '@/lib/errors'
+import { useAuth } from '@/hooks/useAuth'
+import { TournamentVisibility } from '@/types'
 
 export const EditTournamentPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [error, setError] = React.useState('')
@@ -41,15 +44,22 @@ export const EditTournamentPage: React.FC = () => {
           return
         }
 
+        if (user && data.ownerId !== user.id) {
+          navigate(`/tournaments/${id}`, { replace: true })
+          return
+        }
+
         setForm({
           name: data.name,
           description: data.description,
           visibility: data.visibility,
           teamCountLimit: String(data.teamCountLimit),
         })
-      } catch {
+      } catch (err) {
         if (isMounted) {
-          setError('Não foi possível carregar o torneio para edição.')
+          setError(
+            getErrorMessage(err, 'Não foi possível carregar o torneio para edição.'),
+          )
         }
       } finally {
         if (isMounted) {
@@ -63,7 +73,7 @@ export const EditTournamentPage: React.FC = () => {
     return () => {
       isMounted = false
     }
-  }, [id])
+  }, [id, user, navigate])
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -82,8 +92,8 @@ export const EditTournamentPage: React.FC = () => {
         teamCountLimit: Number(form.teamCountLimit),
       })
       navigate(`/tournaments/${id}`)
-    } catch {
-      setError('Não foi possível salvar as alterações.')
+    } catch (err) {
+      setError(getErrorMessage(err, 'Não foi possível salvar as alterações.'))
     } finally {
       setIsSaving(false)
     }
@@ -143,9 +153,10 @@ export const EditTournamentPage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
+                <Label htmlFor="description">Descrição *</Label>
                 <Textarea
                   id="description"
+                  required
                   rows={4}
                   value={form.description}
                   onChange={(event) =>
@@ -163,7 +174,7 @@ export const EditTournamentPage: React.FC = () => {
                   <Input
                     id="teamCountLimit"
                     type="number"
-                    min="2"
+                    min="1"
                     value={form.teamCountLimit}
                     onChange={(event) =>
                       setForm((current) => ({

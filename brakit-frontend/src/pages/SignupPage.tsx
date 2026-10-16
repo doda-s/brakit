@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { getErrorMessage } from '@/lib/errors'
 
 export const SignupPage: React.FC = () => {
   const [email, setEmail] = React.useState('')
@@ -30,7 +31,7 @@ export const SignupPage: React.FC = () => {
       await signup(email, password, name)
       navigate('/dashboard')
     } catch (err) {
-      setError('Falha ao criar conta. Tente novamente.')
+      setError(getErrorMessage(err, 'Falha ao criar conta. Tente novamente.'))
     } finally {
       setIsLoading(false)
     }
@@ -80,9 +81,11 @@ export const SignupPage: React.FC = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Mínimo de 8 caracteres"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                minLength={8}
+                maxLength={72}
                 required
               />
             </div>

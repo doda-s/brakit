@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { getErrorMessage } from '@/lib/errors'
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = React.useState('')
@@ -29,7 +30,9 @@ export const LoginPage: React.FC = () => {
       await login(email, password)
       navigate('/dashboard')
     } catch (err) {
-      setError('Falha ao fazer login. Verifique suas credenciais.')
+      setError(
+        getErrorMessage(err, 'Falha ao fazer login. Verifique suas credenciais.'),
+      )
     } finally {
       setIsLoading(false)
     }
