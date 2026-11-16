@@ -40,7 +40,7 @@ public class MemberService {
 
 	@Transactional
 	public MemberResponse createMember(Long tournamentId, Long teamId, MemberRequest request, Long userId) {
-		tournamentService.getOwned(tournamentId, userId);
+		tournamentService.getManaged(tournamentId, userId);
 		teamService.getInTournament(tournamentId, teamId);
 		var member = MemberRequestMapper.toModel(request, teamId);
 		return MemberResponseMapper.toResponse(memberRepository.save(member));
@@ -48,7 +48,7 @@ public class MemberService {
 
 	@Transactional
 	public MemberResponse updateMember(Long tournamentId, Long teamId, Long memberId, MemberRequest request, Long userId) {
-		tournamentService.getOwned(tournamentId, userId);
+		tournamentService.getManaged(tournamentId, userId);
 		teamService.getInTournament(tournamentId, teamId);
 		var member = getInTeam(teamId, memberId).replace(request.name(), request.role());
 		return MemberResponseMapper.toResponse(memberRepository.save(member));
@@ -56,7 +56,7 @@ public class MemberService {
 
 	@Transactional
 	public void deleteMember(Long tournamentId, Long teamId, Long memberId, Long userId) {
-		tournamentService.getOwned(tournamentId, userId);
+		tournamentService.getManaged(tournamentId, userId);
 		teamService.getInTournament(tournamentId, teamId);
 		if (!memberRepository.deleteByIdInTeam(memberId, teamId)) {
 			throw new MemberNotFound(memberId);

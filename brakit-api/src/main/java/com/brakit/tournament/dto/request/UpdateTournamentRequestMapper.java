@@ -1,5 +1,7 @@
 package com.brakit.tournament.dto.request;
 
+import java.util.Set;
+
 import com.brakit.tournament.model.Tournament;
 
 public class UpdateTournamentRequestMapper {
@@ -10,6 +12,8 @@ public class UpdateTournamentRequestMapper {
 			request.description().orElse(null),
 			request.visibility().orElse(null),
 			request.teamCountLimit().orElse(0),
-			null);
+			null,
+			// Co-owners are managed through their own endpoints and never merged from an update
+			Set.of());
 	}
 }

@@ -45,7 +45,7 @@ public class TeamService {
 	@Transactional
 	public TeamWithMembersResponse createTeam(Long tournamentId, CreateTeamRequest request, Long userId) {
 		// Locking the tournament serializes concurrent creations, so the count check below can't be raced past
-		var tournament = tournamentService.getOwnedForUpdate(tournamentId, userId);
+		var tournament = tournamentService.getManagedForUpdate(tournamentId, userId);
 		if (teamRepository.countInTournament(tournamentId) >= tournament.getTeamCountLimit()) {
 			throw new TournamentFull(tournament.getTeamCountLimit());
 		}
@@ -61,7 +61,7 @@ public class TeamService {
 
 	@Transactional
 	public TeamResponse updateTeam(Long tournamentId, Long teamId, UpdateTeamRequest request, Long userId) {
-		tournamentService.getOwned(tournamentId, userId);
+		tournamentService.getManaged(tournamentId, userId);
 		var team = getInTournament(tournamentId, teamId).rename(request.name());
 		requireUniqueName(team, tournamentId);
 		return TeamResponseMapper.toResponse(teamRepository.save(team));
@@ -69,7 +69,7 @@ public class TeamService {
 
 	@Transactional
 	public void deleteTeam(Long tournamentId, Long teamId, Long userId) {
-		tournamentService.getOwned(tournamentId, userId);
+		tournamentService.getManaged(tournamentId, userId);
 		if (!teamRepository.deleteByIdInTournament(teamId, tournamentId)) {
 			throw new TeamNotFound(teamId);
 		}

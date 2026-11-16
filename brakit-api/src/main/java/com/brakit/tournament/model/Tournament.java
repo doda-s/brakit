@@ -1,6 +1,8 @@
 package com.brakit.tournament.model;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 public class Tournament {
 	private Long id;
@@ -9,6 +11,7 @@ public class Tournament {
 	private TournamentVisibility visibility;
 	private int teamCountLimit;
 	private Long ownerId;
+	private Set<Long> coOwnerIds;
 
 	public Tournament(
 		Long id,
@@ -16,7 +19,8 @@ public class Tournament {
 		String description,
 		TournamentVisibility visibility,
 		int teamCountLimit,
-		Long ownerId
+		Long ownerId,
+		Set<Long> coOwnerIds
 	) {
 		this.id = id;
 		this.name = name;
@@ -24,6 +28,7 @@ public class Tournament {
 		this.visibility = visibility;
 		this.teamCountLimit = teamCountLimit;
 		this.ownerId = ownerId;
+		this.coOwnerIds = new HashSet<>(coOwnerIds);
 	}
 
 	public Long getId() {
@@ -74,6 +79,10 @@ public class Tournament {
 		this.ownerId = ownerId;
 	}
 
+	public Set<Long> getCoOwnerIds() {
+		return Set.copyOf(coOwnerIds);
+	}
+
 	public static Tournament create(
 		String name,
 		String description,
@@ -81,15 +90,40 @@ public class Tournament {
 		int teamCountLimit,
 		Long ownerId
 	) {
-		return new Tournament(null, name, description, visibility, teamCountLimit, ownerId);
+		return new Tournament(null, name, description, visibility, teamCountLimit, ownerId, Set.of());
 	}
 
-	public boolean isOwnedBy(Long userId) {
+	public boolean isCreatedBy(Long userId) {
 		return ownerId.equals(userId);
 	}
 
+	// True for the creator and the co-owners
+	public boolean isManagedBy(Long userId) {
+		return roleOf(userId).isPresent();
+	}
+
+	public Optional<TournamentRole> roleOf(Long userId) {
+		if (isCreatedBy(userId)) {
+			return Optional.of(TournamentRole.CREATOR);
+		}
+		if (coOwnerIds.contains(userId)) {
+			return Optional.of(TournamentRole.CO_OWNER);
+		}
+		return Optional.empty();
+	}
+
 	public boolean isVisibleTo(Optional<Long> viewerId) {
-		return visibility == TournamentVisibility.PUBLIC || viewerId.filter(this::isOwnedBy).isPresent();
+		return visibility == TournamentVisibility.PUBLIC || viewerId.filter(this::isManagedBy).isPresent();
+	}
+
+	// False when the user already manages the tournament, as creator or co-owner
+	public boolean addCoOwner(Long userId) {
+		return !isCreatedBy(userId) && coOwnerIds.add(userId);
+	}
+
+	// False when the user isn't a co-owner
+	public boolean removeCoOwner(Long userId) {
+		return coOwnerIds.remove(userId);
 	}
 
 	public Tournament merge(Tournament t) {
