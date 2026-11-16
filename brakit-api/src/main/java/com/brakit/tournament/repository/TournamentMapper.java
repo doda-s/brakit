@@ -11,7 +11,8 @@ public class TournamentMapper {
 			entity.getDescription(),
 			entity.getVisibility(),
 			entity.getTeamCountLimit(),
-			entity.getOwnerId()
+			entity.getOwnerId(),
+			entity.getCoOwnerIds()
 		);
 	}
 
@@ -22,7 +23,8 @@ public class TournamentMapper {
 			model.getDescription(),
 			model.getVisibility(),
 			model.getTeamCountLimit(),
-			model.getOwnerId()
+			model.getOwnerId(),
+			model.getCoOwnerIds()
 		);
 	}
 }

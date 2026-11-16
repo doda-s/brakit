@@ -33,11 +33,11 @@ public class TournamentRepository implements PanacheRepository<TournamentEntity>
 		return entity.map(TournamentMapper::toModel);
 	}
 
-	// Public tournaments plus, for an authenticated viewer, their own private ones
+	// Public tournaments plus, for an authenticated viewer, the private ones they create or co-own
 	public Page<Tournament> getVisiblePage(Optional<Long> viewerId, int page, int size) {
 		var sort = Sort.by("id");
 		var query = viewerId
-				.map(id -> this.find("visibility = :public or ownerId = :viewer", sort,
+				.map(id -> this.find("visibility = :public or ownerId = :viewer or :viewer member of coOwnerIds", sort,
 						Map.of("public", TournamentVisibility.PUBLIC, "viewer", id)))
 				.orElseGet(() -> this.find("visibility", sort, TournamentVisibility.PUBLIC))
 				.page(page, size);
